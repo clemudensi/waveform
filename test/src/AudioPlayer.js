@@ -3,6 +3,7 @@ import ReactHowler from 'react-howler';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import Waveform from 'react-audio-waveform';
+import { Tooltip, Button, Input } from 'antd';
 import { PlayButton, Progress, Timer } from 'react-soundplayer/components';
 import { DEFAULT_DURATION, DEFAULT_MP3} from "./constants";
 
@@ -13,12 +14,12 @@ class AudioPlayer extends Component {
             playing: false,
             currentTime: 0,
             speedup: false,
-            loadErr: false
+            loadErr: false,
+            addTag: false
         };
     }
 
     seek(secs, play) {
-      console.log(secs, play)
         if (secs && secs.seek != null) secs = secs.seek();
         this.player.seek(secs);
         let toSet = { currentTime: secs };
@@ -77,12 +78,12 @@ class AudioPlayer extends Component {
       const audio = (await axios.get(DEFAULT_MP3, {
         responseType: 'arraybuffer'
       })).data;
+      console.log(new Uint32Array(audio));
       this.setState({ res: new Uint32Array(audio)});
     }
 
-  mouseOver() {
-    console.log("Mouse over!!!");
-    this.setState({flipped: true});
+  addTag() {
+    this.setState({addTag: true});
   }
 
   mouseLeave() {
@@ -92,49 +93,68 @@ class AudioPlayer extends Component {
 
     render() {
         const { mp3url } = this.props;
-        let { playing, currentTime, duration, speedup, loadErr } = this.state;
+        let { playing, currentTime, duration, speedup, loadErr, addTag } = this.state;
         if (this.isObject(currentTime)) currentTime = 0;
         if (mp3url === DEFAULT_MP3) duration = DEFAULT_DURATION;
         return (
           <div className="ff-audio">
-              {duration != null ? <div className="flex flex-center px2 relative z1">
+              {duration != null ?
+                <div className="flex flex-center px2 relative z1">
+
+                  {/*Play button*/}
                   <PlayButton
                     playing={playing}
                     onTogglePlay={() => this.setState({ playing: !playing })}
                     className="flex-none h2 mr2 button button-transparent button-grow rounded"
                   />
-                  {/* seeking={Boolean}
-                        seekingIcon={ReactElement} */}
 
+                  {/*Playing Speed*/}
                   <div className="sb-soundplayer-volume mr2 flex flex-center">
-                      <button onClick={() => this.toggleRate()} className="sb-soundplayer-btn sb-soundplayer-volume-btn flex-none h2 button button-transparent button-grow rounded">
-                          <img className={speedup ? 'audio-speedup' : ""} src="/pane/speedup.svg" height={35} />
+                      <button onClick={() => this.toggleRate()}
+                              className="sb-soundplayer-btn sb-soundplayer-volume-btn
+                              flex-none h2 button button-transparent button-grow rounded"
+                      >
+                          <img className={`speed-btn ${speedup ? 'audio-speedup' : ""}`} alt="speed-up"
+                               src="/pane/speedup.svg" height={25}
+                          />
                       </button>
                   </div>
-                  <div className="flex-auto bg-darken-3 rounded rounded-left"
-                       onDoubleClick={()=> this.mouseOver() }
+
+                  {/*WaveForm Data*/}
+                  <div
+                       className="flex-auto wave-form rounded rounded-left"
+                       onDoubleClick={()=> this.addTag() }
                        onMouseOverCapture={()=> this.mouseLeave() }
 
                   >
                       <Waveform
-                        barWidth={4}
+                        barWidth={1}
                         peaks={this.state.res}
-                        height={200}
+                        height={35}
+                        maxWidth={200}
+                        width={200}
                         pos={currentTime}
                         duration={duration}
-                        onClick={(ts) => this.seek(ts )}
-                        color="#676767"
-                        progressGradientColors={[[0, "#888"], [1, "#aaa"]]}
+                        onClick={(ts) => this.seek(ts)}
+                        color="#C0C0C0"
+                        progressGradientColors={[[1, "#fff"], [1, "#fff"]]}
                         transitionDuration={300}
                       />
                   </div>
-
 
                   <Timer
                     className={"timer"}
                     duration={duration} // in seconds
                     currentTime={currentTime != null ? currentTime : 0} />
-              </div> : (loadErr ? <div style={{ padding: "5 20px" }}>Unable to load audio: {loadErr}</div> : <div className="progress"><div className="indeterminate" /></div>)}
+                </div> :
+                (loadErr ?
+                  <div style={{ padding: "5 20px" }}>
+                      Unable to load audio: {loadErr}
+                  </div> :
+                  <div className="progress">
+                      <div className="indeterminate" />
+                  </div>)}
+
               <div>
                   <ReactHowler
                     src={mp3url}
@@ -147,6 +167,13 @@ class AudioPlayer extends Component {
                     onLoad={() => this.getSeek()}
                     ref={(ref) => (this.player = ref)}
                   />
+                  {
+                      addTag ?
+                          <div className="add-tag">
+                            <Input size="small" placeholder="add tag"/>
+                            <Button size="small">cancel</Button><Button size="small">add</Button>
+                          </div> : null
+                  }
               </div>
           </div>
         );

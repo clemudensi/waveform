@@ -1,14 +1,13 @@
 .audio-section {
     flex-grow: 1;
     height: 58px;
-    margin-top: 10px;
-    margin-right: 10px;
+    /*margin-top: 5px;*/
+    /*margin-right: 20px;*/
     background: linear-gradient(90deg, #b74dc3, #6610ff);
     color: #fff;
     padding-top: 3px;
     display: flex;
     flex-direction: row;
-
     margin: 100px auto;
     width:60%;
 
@@ -276,7 +275,7 @@
 }
 
 .ff-audio .rounded {
-    border-radius: 3px;
+    border-radius: 2px;
 }
 
 .ff-audio .flex-auto {
@@ -297,7 +296,7 @@
 }
 
 .ff-audio .rounded-left {
-    border-radius: 3px 0 0 3px;
+    border-radius: 2px 0 0 2px;
 }
 
 .ff-audio .sb-soundplayer-progress-inner {
@@ -311,5 +310,14 @@
 }
 
 body{
-  background-color: cadetblue;
+    background-color: cadetblue;
+}
+
+.speed-btn{
+    margin-right: -20px;
+}
+
+.add-tag{
+    padding-top: 30px;
+    text-align: center;
 }
