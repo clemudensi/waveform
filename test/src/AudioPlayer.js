@@ -15,7 +15,9 @@ class AudioPlayer extends Component {
             currentTime: 0,
             speedup: false,
             loadErr: false,
-            addTag: false
+            addTag: false,
+            tagValue: '',
+            tags: []
         };
     }
 
@@ -38,6 +40,11 @@ class AudioPlayer extends Component {
         let { playing, currentTime } = this.state;
         return { playing, currentTime };
     }
+
+    handleChange = e => {
+        e.preventDefault();
+        this.setState({ tagValue: e.target.value});
+    };
 
     getSeek() {
         if (this.playerInterval) clearInterval(this.playerInterval);
@@ -82,18 +89,25 @@ class AudioPlayer extends Component {
       this.setState({ res: new Uint32Array(audio)});
     }
 
-  addTag() {
-    this.setState({addTag: true});
-  }
+    addTag() {
+        this.setState({addTag: true});
+    }
 
-  mouseLeave() {
-    console.log("Mouse Leave!!!");
-    this.setState({flipped: false});
-  }
+   cancelTag = () => {
+       this.setState({addTag: false});
+   };
+
+    createTag = (e) => {
+        const { tags, tagValue, currentTime } = this.state;
+        const x_axis = e.clientX - e.target.offsetWidth;
+        const y_axis = e.clientY - e.target.offsetHeight;
+        tags.push({ time: currentTime, comment: tagValue, x_axis, y_axis });
+        this.setState({ tagValue: '', addTag: false});
+    };
 
     render() {
         const { mp3url } = this.props;
-        let { playing, currentTime, duration, speedup, loadErr, addTag } = this.state;
+        let { playing, currentTime, duration, speedup, loadErr, addTag, tagValue, tags } = this.state;
         if (this.isObject(currentTime)) currentTime = 0;
         if (mp3url === DEFAULT_MP3) duration = DEFAULT_DURATION;
         return (
@@ -102,6 +116,11 @@ class AudioPlayer extends Component {
                 <div className="flex flex-center px2 relative z1">
 
                   {/*Play button*/}
+                  {/*  {tags.map(item => */}
+                  {/*    <div style={{ left: item.x_axis, top: item.y_axis, position:'absolute'}}>*/}
+                  {/*        {item.comment}*/}
+                  {/*    </div>)*/}
+                  {/*  }*/}
                   <PlayButton
                     playing={playing}
                     onTogglePlay={() => this.setState({ playing: !playing })}
@@ -123,8 +142,7 @@ class AudioPlayer extends Component {
                   {/*WaveForm Data*/}
                   <div
                        className="flex-auto wave-form rounded rounded-left"
-                       onDoubleClick={()=> this.addTag() }
-                       onMouseOverCapture={()=> this.mouseLeave() }
+                       onDoubleClick={()=> this.addTag()}
 
                   >
                       <Waveform
@@ -170,8 +188,23 @@ class AudioPlayer extends Component {
                   {
                       addTag ?
                           <div className="add-tag">
-                            <Input size="small" placeholder="add tag"/>
-                            <Button size="small">cancel</Button><Button size="small">add</Button>
+                            <Input size="small"
+                                   placeholder="add tag"
+                                   onChange={this.handleChange}
+                                   value={tagValue}
+                            />
+                            <Button
+                                size="small"
+                                onClick={this.cancelTag}
+                            >
+                                cancel
+                            </Button>
+                            <Button
+                                size="small"
+                                onClick={this.createTag}
+                            >
+                                add
+                            </Button>
                           </div> : null
                   }
               </div>
