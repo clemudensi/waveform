@@ -11,7 +11,7 @@
 
     margin: 100px auto;
     width:60%;
-    
+
 }
 
 .audio-section div:first-child {
@@ -308,4 +308,8 @@
 
 .ff-audio .timer {
     margin-left: 20px;
+}
+
+body{
+  background-color: cadetblue;
 }

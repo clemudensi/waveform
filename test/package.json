@@ -3,11 +3,15 @@
     "version": "0.1.0",
     "private": true,
     "dependencies": {
+        "antd": "^3.25.0",
+        "axios": "^0.19.0",
         "react": "^16.0.0",
+        "react-audio-waveform": "^0.0.5",
         "react-dom": "^16.0.0",
         "react-howler": "^3.7.4",
         "react-scripts": "1.0.17",
-        "react-soundplayer": "^1.0.4"
+        "react-soundplayer": "^1.0.4",
+        "waveform-data": "^3.1.0"
     },
     "scripts": {
         "start": "react-scripts start",
