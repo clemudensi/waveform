@@ -3,13 +3,14 @@ import ReactHowler from 'react-howler';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import Waveform from 'react-audio-waveform';
-import { Tooltip, Button, Input } from 'antd';
+import { Tooltip, Button, Input, Icon } from 'antd';
 import { PlayButton, Progress, Timer } from 'react-soundplayer/components';
 import { DEFAULT_DURATION, DEFAULT_MP3} from "./constants";
 
 class AudioPlayer extends Component {
     constructor(props) {
         super(props);
+        this.myRef = React.createRef();
         this.state = {
             playing: false,
             currentTime: 0,
@@ -17,7 +18,9 @@ class AudioPlayer extends Component {
             loadErr: false,
             addTag: false,
             tagValue: '',
-            tags: []
+            error: '',
+            tags: [],
+            wave_width: 0,
         };
     }
 
@@ -75,7 +78,20 @@ class AudioPlayer extends Component {
     async componentDidMount() {
       await this.webAudio();
       this.getSeek();
+        window.addEventListener('resize', this.updateDimensions);
+
     }
+
+    componentDidUpdate(prevProps, prevState){
+        if(prevState.inner_x !== this.state.inner_x){
+            const wave_width = document.getElementById('container').clientWidth;
+            this.setState({ wave_width })
+        }
+    }
+
+    updateDimensions = () => {
+        this.setState({ inner_x: window.innerWidth });
+    };
 
     isObject(obj) {
         return obj instanceof Object || ((typeof obj === "object") && (obj !== null));
@@ -89,91 +105,118 @@ class AudioPlayer extends Component {
       this.setState({ res: new Uint32Array(audio)});
     }
 
-    addTag() {
-        this.setState({addTag: true});
-    }
+    addTag = () =>{
+        const inner_x = window.innerWidth;
+        const wave_width = document.getElementById('container').clientWidth;
+        this.setState({addTag: true, wave_width, inner_x });
+    };
 
    cancelTag = () => {
        this.setState({addTag: false});
    };
 
-    createTag = (e) => {
+    createTag = () => {
         const { tags, tagValue, currentTime } = this.state;
-        const x_axis = e.clientX - e.target.offsetWidth;
-        const y_axis = e.clientY - e.target.offsetHeight;
-        tags.push({ time: currentTime, comment: tagValue, x_axis, y_axis });
-        this.setState({ tagValue: '', addTag: false});
+        const timeline = `${Math.floor(currentTime/60)}:${currentTime%60}`;
+
+        return tagValue.length > 0 ? (() => {
+            tags.push({ time: timeline, comment: tagValue, currentTime });
+            this.setState({ tagValue: '', addTag: false, error: ''});
+        })() : this.setState({ error: 'Add a tag name'})
     };
+
 
     render() {
         const { mp3url } = this.props;
-        let { playing, currentTime, duration, speedup, loadErr, addTag, tagValue, tags } = this.state;
+        let {
+            playing, currentTime, duration, speedup,
+            loadErr, addTag, tagValue, tags, wave_width
+        } = this.state;
+
         if (this.isObject(currentTime)) currentTime = 0;
+
         if (mp3url === DEFAULT_MP3) duration = DEFAULT_DURATION;
+
         return (
-          <div className="ff-audio">
+          // AudioPlayer Starts
+          <div className="ff-audio" ref={this.myRef}>
+              {
+                  this.state.error.length > 0 ?
+                    <p className="tag-error">{this.state.error}</p> : null
+              }
+
               {duration != null ?
                 <div className="flex flex-center px2 relative z1">
 
-                  {/*Play button*/}
-                  {/*  {tags.map(item => */}
-                  {/*    <div style={{ left: item.x_axis, top: item.y_axis, position:'absolute'}}>*/}
-                  {/*        {item.comment}*/}
-                  {/*    </div>)*/}
-                  {/*  }*/}
+                  {/*Play button starts*/}
                   <PlayButton
                     playing={playing}
                     onTogglePlay={() => this.setState({ playing: !playing })}
-                    className="flex-none h2 mr2 button button-transparent button-grow rounded"
+                    className="play-btn flex-none h2 mr2 button button-transparent button-grow rounded"
                   />
+                  {/*Play button ends*/}
 
-                  {/*Playing Speed*/}
+                  {/*Playing Speed starts*/}
                   <div className="sb-soundplayer-volume mr2 flex flex-center">
                       <button onClick={() => this.toggleRate()}
                               className="sb-soundplayer-btn sb-soundplayer-volume-btn
                               flex-none h2 button button-transparent button-grow rounded"
                       >
                           <img className={`speed-btn ${speedup ? 'audio-speedup' : ""}`} alt="speed-up"
-                               src="/pane/speedup.svg" height={25}
+                               src="/pane/speedup.svg"
                           />
                       </button>
                   </div>
+                  {/*Playing Speed ends*/}
 
-                  {/*WaveForm Data*/}
+
+                  {/*WaveForm Container Starts*/}
                   <div
-                       className="flex-auto wave-form rounded rounded-left"
-                       onDoubleClick={()=> this.addTag()}
+                        id="container"
+                       className="wave-form flex-auto rounded sb-soundplayer-volume mr2 flex flex-center"
+                       onDoubleClick={this.addTag}
+                       // onMouseMove={this.seePoints}
 
-                  >
+                  >{tags.map((item, i) =>
+                        <Tooltip placement="top" title={item.comment} key={i}>
+                            <span className="dot" style={{ left: (wave_width * (item.currentTime/duration))}}/>
+                        </Tooltip>)}
+
                       <Waveform
                         barWidth={1}
                         peaks={this.state.res}
-                        height={35}
-                        maxWidth={200}
-                        width={200}
+                        height={30}
+                        maxWidth="28vw"
+                        width="28vw"
                         pos={currentTime}
                         duration={duration}
                         onClick={(ts) => this.seek(ts)}
-                        color="#C0C0C0"
+                        color="rgba(167, 167, 167, 0.65)"
                         progressGradientColors={[[1, "#fff"], [1, "#fff"]]}
                         transitionDuration={300}
                       />
                   </div>
+                  {/*WaveForm Container ends*/}
 
+                  {/*Timer starts*/}
                   <Timer
                     className={"timer"}
                     duration={duration} // in seconds
                     currentTime={currentTime != null ? currentTime : 0} />
-                </div> :
-                (loadErr ?
-                  <div style={{ padding: "5 20px" }}>
-                      Unable to load audio: {loadErr}
-                  </div> :
-                  <div className="progress">
-                      <div className="indeterminate" />
-                  </div>)}
+                    {/*Timer ends*/}
 
-              <div>
+                </div> :
+                    (loadErr ?
+                      <div style={{ padding: "5 20px" }}>
+                          Unable to load audio: {loadErr}
+                      </div> :
+                      <div className="progress">
+                          <div className="indeterminate" />
+                      </div>
+                    )}
+
+                {/*Stream Audio*/}
+                <div>
                   <ReactHowler
                     src={mp3url}
                     playing={playing}
@@ -207,8 +250,9 @@ class AudioPlayer extends Component {
                             </Button>
                           </div> : null
                   }
-              </div>
+                </div>
           </div>
+          // AudioPlayer Ends
         );
     }
 }
